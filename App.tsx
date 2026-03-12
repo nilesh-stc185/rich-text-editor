@@ -5,7 +5,7 @@
 
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { RichEditorExampleScreen } from './screens/RichEditorExampleScreen';
+import { RichEditorExampleScreen } from './screens/RichEditor';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

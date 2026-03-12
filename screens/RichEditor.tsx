@@ -208,7 +208,7 @@ export function RichEditorExampleScreen() {
                 pressed && styles.btnPressed,
               ]}
             >
-              <Text style={[styles.toggleLabel, { color: palette.textSecondary }]}>
+              <Text style={[styles.toggleLabel, { color: 'white' }]}>
                 {isDark ? 'Dark' : 'Light'}
               </Text>
             </Pressable>
