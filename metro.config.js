@@ -1,11 +1,26 @@
+const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const defaultResolve = require('metro-resolver').resolve;
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {};
+const defaultConfig = getDefaultConfig(__dirname);
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+const config = {
+  resolver: {
+    ...defaultConfig.resolver,
+    resolveRequest: (context, moduleName, platform) => {
+      if (moduleName === 'react-native-webview') {
+        return {
+          type: 'sourceFile',
+          filePath: path.resolve(__dirname, 'node_modules/react-native-webview/index.js'),
+        };
+      }
+      return defaultResolve(
+        { ...context, resolveRequest: null },
+        moduleName,
+        platform
+      );
+    },
+  },
+};
+
+module.exports = mergeConfig(defaultConfig, config);

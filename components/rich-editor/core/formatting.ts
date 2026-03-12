@@ -1,0 +1,47 @@
+import type { ToolbarActionId } from '../types';
+
+export const TOOLBAR_TO_LIB_ACTION: Record<ToolbarActionId, string> = {
+  bold: 'bold',
+  italic: 'italic',
+  underline: 'underline',
+  strikeThrough: 'strikeThrough',
+  code: 'code',
+  subscript: 'subscript',
+  superscript: 'superscript',
+  paragraph: 'paragraph',
+  heading1: 'heading1',
+  heading2: 'heading2',
+  heading3: 'heading3',
+  heading4: 'heading4',
+  heading5: 'heading5',
+  heading6: 'heading6',
+  quote: 'quote',
+  horizontalRule: 'horizontalRule',
+  unorderedList: 'unorderedList',
+  orderedList: 'orderedList',
+  indent: 'indent',
+  outdent: 'outdent',
+  insertLink: 'link',
+  insertImage: 'image',
+  insertVideo: 'video',
+  justifyLeft: 'justifyLeft',
+  justifyCenter: 'justifyCenter',
+  justifyRight: 'justifyRight',
+  justifyFull: 'justifyFull',
+  foreColor: 'foreColor',
+  hiliteColor: 'hiliteColor',
+  fontSize: 'fontSize',
+  fontName: 'fontName',
+  undo: 'undo',
+  redo: 'redo',
+  removeFormat: 'removeFormat',
+  keyboard: 'keyboard',
+  paste: 'paste',
+  copy: 'copy',
+  table: 'table',
+  checkboxList: 'checkboxList',
+};
+
+export function getLibActionId(toolbarAction: ToolbarActionId): string {
+  return TOOLBAR_TO_LIB_ACTION[toolbarAction] ?? toolbarAction;
+}
