@@ -184,15 +184,20 @@ export function RichEditorExampleScreen() {
         />
       </View>
       <View style={styles.shell}>
-        <View style={[styles.header, { borderBottomColor: palette.subtleBorder }]}>
-          <View>
-            <Text style={[styles.title, { color: palette.textPrimary }]}> Rich Editor</Text>
-            <Text style={[styles.subtitle, { color: palette.textSecondary }]}>
-              A distraction-free writing canvas with a glassmorphism design.
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable
+
+        <View style={styles.mainRow}>
+          <View
+            style={[
+              styles.editorCard,
+              {
+                backgroundColor: palette.panel,
+                borderColor: palette.border,
+              },
+            ]}
+          >
+            <View style={styles.editorHeaderRow}>
+              <View style={styles.editorHeaderActions}>
+              <Pressable
               onPress={handleToggleTheme}
               style={({ pressed }) => [
                 styles.toggle,
@@ -210,44 +215,14 @@ export function RichEditorExampleScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.iconBtn,
-                { backgroundColor: palette.primarySoft, borderColor: palette.border },
+                { backgroundColor: '#534f4f', borderColor: palette.border },
                 pressed && styles.btnPressed,
               ]}
               onPress={handleGetHtml}
             >
-              <Text style={[styles.iconBtnText, { color: palette.primary }]}>HTML</Text>
+              <Text style={[styles.iconBtnText, { color: 'white' }]}>HTML</Text>
             </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.mainRow}>
-          <View
-            style={[
-              styles.editorCard,
-              {
-                backgroundColor: palette.panel,
-                borderColor: palette.border,
-              },
-            ]}
-          >
-            <View style={styles.editorHeaderRow}>
-              <View>
-                <Text style={[styles.editorTitle, { color: palette.textPrimary }]}>Untitled</Text>
-                <Text style={[styles.editorHint, { color: palette.textSecondary }]}>
-                  Start writing your thoughts…
-                </Text>
-              </View>
-              <View style={styles.editorHeaderActions}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.smallBtn,
-                    { backgroundColor: palette.primarySoft, borderColor: palette.border },
-                    pressed && styles.btnPressed,
-                  ]}
-                  onPress={handleClear}
-                >
-                  <Text style={[styles.smallBtnText, { color: palette.textSecondary }]}>Clear</Text>
-                </Pressable>
+               
                 <Pressable
                   style={({ pressed }) => [
                     styles.smallBtn,
@@ -258,6 +233,17 @@ export function RichEditorExampleScreen() {
                 >
                   <Text style={[styles.smallBtnText, { color: '#fff' }]}>Focus</Text>
                 </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.smallBtn,
+                    { backgroundColor: '#33625f', borderColor: palette.border },
+                    pressed && styles.btnPressed,
+                  ]}
+                  onPress={handleClear}
+                >
+                  <Text style={[styles.smallBtnText, { color: "white" }]}>Clear</Text>
+                </Pressable>
+                
               </View>
             </View>
 
@@ -600,14 +586,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   smallBtn: {
+    minWidth: 70,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   smallBtnText: {
     fontSize: 12,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   editorBody: {
     flex: 1,
