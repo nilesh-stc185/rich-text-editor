@@ -5,12 +5,19 @@ import {
   Text,
   Pressable,
   Alert,
+  ActivityIndicator,
+  Platform,
+  Linking,
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
+import RNShare from 'react-native-share';
+// RNShare is used for PDF sharing via Cloudinary URL
 import { RichEditor, type RichEditorRef, type EditorStats, type ToolbarActionId } from '../components/rich-editor';
+import { uploadImageToCloudinary, type CloudinaryUploadResult } from '../helpers/cloudinary';
+import { exportHtmlToPdf } from '../helpers/exportPdfApi';
 
 const SAMPLE_HTML = `
 <p>This is a <strong>sample</strong> rich text with <em>formatting</em>.</p>
@@ -27,6 +34,8 @@ export function RichEditorExampleScreen() {
   const [stats, setStats] = useState<EditorStats>({ words: 0, characters: 0, charactersNoSpaces: 0 });
   const [insertMenuOpen, setInsertMenuOpen] = useState(false);
   const [isDarkOverride, setIsDarkOverride] = useState<boolean | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<CloudinaryUploadResult[]>([]);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const systemScheme = useColorScheme();
   const { width } = useWindowDimensions();
 
@@ -42,6 +51,30 @@ export function RichEditorExampleScreen() {
     const html = await editorRef.current?.getHTML();
     if (html !== undefined) {
       Alert.alert('HTML (first 500 chars)', html.slice(0, 500));
+    }
+  }, []);
+
+  const handleExportPdf = useCallback(async () => {
+    const html = await editorRef.current?.getHTML();
+
+    if (!html) {
+      return;
+    }
+
+    setIsExportingPdf(true);
+    try {
+      const pdfUri = await exportHtmlToPdf(html, 'rich-editor');
+      await RNShare.open({
+        url: pdfUri,
+        type: 'application/pdf',
+        failOnCancel: false,
+      });
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      console.log('PDF export error:', msg);
+      Alert.alert('Error', `Failed to export PDF:\n${msg}`);
+    } finally {
+      setIsExportingPdf(false);
     }
   }, []);
 
@@ -68,12 +101,23 @@ export function RichEditorExampleScreen() {
     }
 
     const asset = result.assets[0];
-    if (asset?.base64) {
-      const mime = asset.type && asset.type.startsWith('image/') ? asset.type : 'image/jpeg';
-      return `data:${mime};base64,${asset.base64}`;
+    if (!asset?.base64) {
+      Alert.alert('Upload error', 'No image data found to upload.');
+      return null;
     }
 
-    return asset?.uri ?? null;
+    const mime = asset.type && asset.type.startsWith('image/') ? asset.type : 'image/jpeg';
+    const dataUrl = `data:${mime};base64,${asset.base64}`;
+
+    try {
+      const uploaded = await uploadImageToCloudinary(dataUrl);
+      setUploadedImages((prev) => [uploaded, ...prev]);
+      return uploaded.url;
+    } catch (e) {
+      console.log('Cloudinary upload error', e);
+      Alert.alert('Upload error', 'Failed to upload image to Cloudinary.');
+      return null;
+    }
   }, []);
 
   const handleLinkInsert = useCallback((): Promise<{ title: string; url: string } | null> => {
@@ -208,7 +252,7 @@ export function RichEditorExampleScreen() {
                 pressed && styles.btnPressed,
               ]}
             >
-              <Text style={[styles.toggleLabel, { color: 'white' }]}>
+              <Text style={[styles.toggleLabel, { color: isDark ? 'white' : 'black' }]}>
                 {isDark ? 'Dark' : 'Light'}
               </Text>
             </Pressable>
@@ -216,20 +260,40 @@ export function RichEditorExampleScreen() {
               style={({ pressed }) => [
                 styles.iconBtn,
                 { backgroundColor: '#534f4f', borderColor: palette.border },
-                pressed && styles.btnPressed,
+                isExportingPdf && styles.btnDisabled,
+                pressed && !isExportingPdf && styles.btnPressed,
               ]}
               onPress={handleGetHtml}
+              disabled={isExportingPdf}
             >
               <Text style={[styles.iconBtnText, { color: 'white' }]}>HTML</Text>
             </Pressable>
-               
+
+            <Pressable
+              style={[
+                styles.smallBtn,
+                { backgroundColor: '#1f2937', borderColor: palette.border },
+                isExportingPdf && styles.btnDisabled,
+              ]}
+              onPress={handleExportPdf}
+              disabled={isExportingPdf}
+            >
+              {isExportingPdf ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={[styles.smallBtnText, { color: 'white' }]}>PDF</Text>
+              )}
+            </Pressable>
+
                 <Pressable
                   style={({ pressed }) => [
                     styles.smallBtn,
                     { backgroundColor: palette.primary, borderColor: 'transparent' },
-                    pressed && styles.btnPressed,
+                    isExportingPdf && styles.btnDisabled,
+                    pressed && !isExportingPdf && styles.btnPressed,
                   ]}
                   onPress={handleFocus}
+                  disabled={isExportingPdf}
                 >
                   <Text style={[styles.smallBtnText, { color: '#fff' }]}>Focus</Text>
                 </Pressable>
@@ -237,11 +301,13 @@ export function RichEditorExampleScreen() {
                   style={({ pressed }) => [
                     styles.smallBtn,
                     { backgroundColor: '#33625f', borderColor: palette.border },
-                    pressed && styles.btnPressed,
+                    isExportingPdf && styles.btnDisabled,
+                    pressed && !isExportingPdf && styles.btnPressed,
                   ]}
                   onPress={handleClear}
+                  disabled={isExportingPdf}
                 >
-                  <Text style={[styles.smallBtnText, { color: "white" }]}>Clear</Text>
+                  <Text style={[styles.smallBtnText, { color: 'white' }]}>Clear</Text>
                 </Pressable>
                 
               </View>
@@ -435,6 +501,33 @@ export function RichEditorExampleScreen() {
               </View>
 
               <View style={styles.sideSection}>
+                <Text style={[styles.sideSectionLabel, { color: palette.textSecondary }]}>Uploaded images</Text>
+                {uploadedImages.length === 0 ? (
+                  <Text style={[styles.outlineEmpty, { color: palette.textSecondary }]}>
+                    Insert an image to upload it to Cloudinary.
+                  </Text>
+                ) : (
+                  uploadedImages.slice(0, 5).map((item) => (
+                    <Pressable
+                      key={item.publicId}
+                      style={({ pressed }) => [
+                        styles.outlineItem,
+                        pressed && styles.insertMenuItemPressed,
+                      ]}
+                      onPress={() => Linking.openURL(item.url)}
+                    >
+                      <Text
+                        style={[styles.outlineText, { color: palette.textPrimary }]}
+                        numberOfLines={1}
+                      >
+                        {item.publicId}
+                      </Text>
+                    </Pressable>
+                  ))
+                )}
+              </View>
+
+              <View style={styles.sideSection}>
                 <Text style={[styles.sideSectionLabel, { color: palette.textSecondary }]}>Assistant</Text>
                 <Pressable
                   style={({ pressed }) => [
@@ -544,6 +637,9 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.85,
+  },
+  btnDisabled: {
+    opacity: 0.4,
   },
   iconBtnText: {
     color: '#fff',
